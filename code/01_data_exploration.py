@@ -9,7 +9,11 @@ import os
 
 # 设置路径
 data_dir = '../data/raw/diabetes_130_us_hospitals_1999_2008'
-raw_data_path = os.path.join(data_dir, 'diabetic_data.csv')
+# 使用抽样后的数据（符合10MB要求）
+raw_data_path = os.path.join(data_dir, 'diabetic_data_sampled.csv')
+# 如果抽样数据不存在，使用原始数据
+if not os.path.exists(raw_data_path):
+    raw_data_path = os.path.join(data_dir, 'diabetic_data.csv')
 mapping_path = os.path.join(data_dir, 'IDS_mapping.csv')
 
 # 读取数据

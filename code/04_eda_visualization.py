@@ -16,6 +16,7 @@ plt.rcParams['axes.unicode_minus'] = False
 # 设置路径
 data_dir = '../data/processed'
 cleaned_data_path = os.path.join(data_dir, 'diabetic_data_cleaned.csv')
+# 注意：清洗后的数据已基于抽样数据（16,777条记录，符合10MB要求）
 output_dir = '../docs/figures'
 os.makedirs(output_dir, exist_ok=True)
 
