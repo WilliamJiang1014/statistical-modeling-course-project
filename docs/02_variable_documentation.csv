@@ -1,0 +1,21 @@
+﻿变量名,变量类型,取值说明,缺失值,备注
+readmitted,分类变量（因变量-分类任务）,NO: 未再入院; <30: 30天内再入院; >30: 30天后再入院,无,需要转换为二分类：30天内再入院（1）vs 其他（0）
+time_in_hospital,连续变量（因变量-回归任务）,本次住院天数（整数）,无,需要检查异常值（如过大值）
+age,分类变量,"年龄分组，如[0-10), [10-20), [20-30)等",无,已分组，可直接使用
+gender,分类变量,"性别：Male, Female",可能有缺失,需要检查缺失值处理
+race,分类变量,"种族：Caucasian, AfricanAmerican, Asian, Hispanic, Other等","可能有""?""表示缺失",需要处理缺失值
+admission_type_id,分类变量,入院类型ID（需参考映射表）,无,映射关系已从IDS_mapping.csv读取，共8种类型
+discharge_disposition_id,分类变量,出院去向ID（需参考映射表）,无,映射关系已从IDS_mapping.csv读取，共30种类型
+admission_source_id,分类变量,入院来源ID（需参考映射表）,无,映射关系已从IDS_mapping.csv读取，共25种类型
+number_outpatient,连续变量,既往门诊次数,无,可能需要检查异常值
+number_emergency,连续变量,既往急诊次数,无,可能需要检查异常值
+number_inpatient,连续变量,既往住院次数,无,可能需要检查异常值
+diag_1,分类变量,主要诊断（ICD-9编码）,"可能有""?""表示缺失",可能需要分组（如糖尿病相关、心血管相关等）
+diag_2,分类变量,次要诊断1（ICD-9编码）,"可能有""?""表示缺失",同diag_1
+diag_3,分类变量,次要诊断2（ICD-9编码）,"可能有""?""表示缺失",同diag_1
+number_diagnoses,连续变量,诊断数量,无,可作为合并症数量的代理指标
+num_lab_procedures,连续变量,实验室检查次数,无,
+num_procedures,连续变量,操作/手术次数,无,
+num_medications,连续变量,用药数量,无,
+"insulin, metformin, glipizide等",分类变量,"各种糖尿病药物的使用情况：No, Steady, Up, Down",无,"可能需要合并为""是否使用胰岛素""等二分类变量"
+diabetesMed,分类变量,"是否使用糖尿病药物：Yes, No",无,
