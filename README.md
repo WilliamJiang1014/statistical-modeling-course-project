@@ -1,34 +1,44 @@
-# Statistical Modeling Course Project
+# 统计分析与建模课程项目（Statistical Modeling Course Project）
 
-This repository contains the final project for the course **Statistical Analysis and Modeling (统计分析与建模)**.
+本仓库用于存放课程 **《统计分析与建模》期末项目** 的全部内容，包括数据、代码、文档和演示材料。
 
-## Project Topic
+## 一、项目主题
 
-Direction 3 from the project proposal: **Diabetes patients' 30-day readmission risk and length of stay**.
+- 选题方向：**方向 3——糖尿病患者 30 天再入院风险与住院天数建模**  
+- 研究目标：
+  - 利用公开的糖尿病住院数据集，分析影响 **30 天内再入院** 与 **住院天数（Length of Stay, LOS）** 的主要因素；
+  - 构建可解释的统计模型，包括：
+    - **分类模型**：预测患者是否会在出院后 30 天内再次入院；
+    - **回归模型**：预测本次住院天数；
+  - 开发一个简单的原型系统，用于可视化数据和模型结果，并支持交互式风险评估。
 
-We aim to:
+## 二、仓库结构说明
 
-- Analyze risk factors associated with 30-day readmission for diabetes inpatients.
-- Build interpretable statistical models for:
-  - A **classification task**: whether a patient will be readmitted within 30 days.
-  - A **regression task**: the expected length of stay (LOS) for a given admission.
-- Develop a simple prototype system to visualize the data and model results.
+- `code/`  
+  - 数据预处理脚本  
+  - 探索性数据分析（EDA）代码  
+  - 回归与分类建模代码  
+  - 原型系统（如 Streamlit / Shiny 等）的源代码  
 
-## Repository Structure
+- `data/`  
+  - 项目使用的数据文件（原始数据与处理后数据）  
+  - 将根据课程要求控制数据体积在 **10 MB 以内**  
+  - 如涉及敏感信息，将进行匿名化或仅保留公开数据集  
 
-- `code/` – Data preprocessing, EDA, modeling scripts, and prototype system source code.
-- `data/` – Project datasets (raw and processed).  
-  - Please ensure data size stays within the course requirement (≤ 10 MB).
-- `docs/` – Project proposal, report drafts, slides, and other documentation.
+- `docs/`  
+  - 项目方案与设计文档  
+  - 项目报告（草稿与最终版）  
+  - 答辩 PPT、项目小视频脚本等资料  
 
-## Course Requirements Mapping
+## 三、与课程要求的对应关系（简要）
 
-This project will cover:
+本项目将在以下方面对应课程与期末项目要求：
 
-- Data collection, preprocessing, and exploratory data analysis (EDA).
-- At least **two types of statistical models** (regression + classification).
-- Model evaluation, interpretation of parameters, and application analysis.
-- A small prototype system to demonstrate visualizations and model outputs.
-- Public hosting of data, code, documentation, and a short project video via GitHub.
+- **数据可视化与探索分析**：对关键变量和关系进行可视化，并给出明确结论；
+- **数据预处理与统计建模**：包含数据清洗、特征处理、回归模型与分类模型的构建与比较；
+- **模型评估与解读**：使用合适的评价指标（如 \(R^2\)、RMSE、准确率、召回率、AUC 等），并对模型参数进行合理解读；
+- **原型系统展示**：通过简单系统展示数据、预处理结果、模型输出和评价指标；
+- **开源与协作**：通过 GitHub 公开项目仓库，提交完整的数据、代码、文档和项目小视频，展示团队协作过程。
 
+后续会在本 README 中补充更具体的运行说明（依赖环境、启动命令等）。
 
