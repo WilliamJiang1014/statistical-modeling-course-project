@@ -10,6 +10,7 @@ library(DT)
 library(ggplot2)
 library(dplyr)
 library(readr)
+library(caret)
 
 # ============================================================================
 # UI界面定义

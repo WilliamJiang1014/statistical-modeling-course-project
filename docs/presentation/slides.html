@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糖尿病患者再入院风险与住院天数统计建模</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+/* 1. 全局设置 (SETUP) */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f0f2f5;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+  padding: 20px 0;
+  place-items: center;
+  font-family: 'Noto Sans SC', sans-serif;
+  margin: 0;
+}
+
+/* 幻灯片容器 */
+.slide-container {
+  align-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 720px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 50px;
+  position: relative;
+  width: 1280px;
+  background-color: #ffffff; /* 默认为白底 */
+}
+
+/* 2. 排版 (TYPOGRAPHY) */
+
+/* 标题字体 */
+.slide-container h1 {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.slide-container h2,
+.slide-container h3 {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  margin: 0;
+  color: #003366; /* 学术深蓝 */
+}
+
+/* 正文字体 */
+.slide-container p,
+.slide-container li,
+.slide-container td,
+.slide-container th,
+.slide-container .subtitle {
+  font-family: 'Noto Sans SC', sans-serif;
+  color: #333333;
+  line-height: 1.6;
+  font-size: 20px;
+}
+
+/* 字体大小规范 */
+.slide-container h1 {
+  font-size: 56px;
+  color: #ffffff; /* 深色背景上的白色文字 */
+}
+
+.slide-container .slide-title {
+  font-size: 42px;
+  margin-bottom: 30px;
+  width: 100%;
+  text-align: left;
+  border-bottom: 3px solid #003366;
+  padding-bottom: 15px;
+}
+
+.slide-container h3 {
+  font-size: 26px;
+  margin-bottom: 15px;
+  color: #005088;
+}
+
+.slide-container .subtitle {
+  font-size: 24px;
+  font-weight: 400;
+  margin-top: 20px;
+  color: #e0e0e0;
+}
+
+/* 3. 布局 (LAYOUTS) */
+
+/* 通用内容区域 */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 双栏布局 */
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+}
+
+.two-column.tiled > div {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+    height: 100%;
+    border: 1px solid #e9ecef;
+}
+
+/* 列表样式 */
+ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+li {
+  margin-bottom: 12px;
+}
+
+/* 图片容器 */
+.image-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+.image-wrapper img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* 封面页特定样式 */
+.title-layout {
+    text-align: center;
+    z-index: 2;
+}
+
+.title-bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #003366 0%, #005088 100%);
+    z-index: 0;
+}
+
+.member-info {
+    margin-top: 60px;
+    color: #e0e0e0;
+    font-size: 18px;
+}
+
+/* 修正：强制深色背景页面的文字颜色为白色 */
+#slide1 p, 
+#slide1 .subtitle, 
+#slide1 .member-info p,
+#slide13 p, 
+#slide13 h2, 
+#slide13 .fa-brands,
+#slide13 .qa-text {
+    color: #f0f0f0 !important;
+}
+
+/* 目录页样式 */
+.toc-list {
+    list-style: none;
+    padding: 0;
+}
+
+.toc-list li {
+    font-size: 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.toc-number {
+    font-family: 'Merriweather', serif;
+    font-weight: 700;
+    font-size: 40px;
+    color: #005088;
+    margin-right: 20px;
+    line-height: 1;
+}
+
+/* 时间轴/流程图样式 (Slide 4) */
+.timeline-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 20px 0;
+}
+
+.timeline-step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+    background: #f0f7ff;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #bbdefb;
+    margin: 0 10px;
+}
+
+.timeline-step i {
+    font-size: 32px;
+    color: #005088;
+    margin-bottom: 10px;
+}
+
+.arrow-separator {
+    font-size: 24px;
+    color: #90a4ae;
+}
+
+/* 磁贴样式 (Slide 3) */
+.icon-box {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.icon-box i {
+    font-size: 28px;
+    color: #cc3333; /* 痛点红色 */
+    margin-right: 15px;
+    margin-top: 5px;
+    width: 35px;
+    text-align: center;
+}
+
+/* 表格样式 (Slide 7) */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+th, td {
+    padding: 18px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #005088;
+    color: white !important;
+    font-weight: 700;
+}
+
+td:first-child {
+    font-weight: 700;
+    background-color: #f8f9fa;
+    color: #003366;
+}
+
+/* 图表样式 (Slide 10) */
+.bar-chart-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.bar-label {
+    width: 200px;
+    text-align: right;
+    margin-right: 20px;
+    font-weight: 700;
+    color: #333;
+}
+
+.bar-track {
+    flex-grow: 1;
+    background-color: #e9ecef;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #005088, #007acc);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 15px;
+    color: white;
+    font-weight: 700;
+}
+
+.or-line {
+    position: absolute;
+    left: 200px; /* Adjust based on bar scale */
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #cc3333;
+    z-index: 10;
+}
+
+/* 强调文字 */
+.highlight-number {
+    font-family: 'Merriweather', serif;
+    font-size: 64px;
+    color: #cc3333;
+    font-weight: 700;
+}
+
+.highlight-label {
+    font-size: 20px;
+    color: #666;
+}
+
+/* Bleed Image Layout (Slide 11) */
+.slide-container.bleed-image-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  padding: 0;
+}
+
+.bleed-content {
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.bleed-image {
+    width: 100%;
+    height: 100%;
+    max-height: 720px;
+    object-fit: cover;
+}
+
+/* 数学公式容器 */
+.formula-container {
+    font-size: 22px;
+    margin: 10px 0;
+    color: #333;
+}
+
+/* 占位符提示 */
+.placeholder-notice {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6) !important;
+    z-index: 5;
+    font-style: italic;
+}
+
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: 封面页 -->
+<div class="slide-container" id="slide1">
+    <div class="title-bg-overlay"></div>
+    <div class="title-layout">
+        <h1>基于统计建模的糖尿病患者<br>再入院风险与住院天数分析</h1>
+        <p class="subtitle">统计分析与建模课程项目（方向 3）</p>
+        <div class="member-info">
+            <p>汇报人：成员 C</p>
+            <p>小组成员：成员 A（数据）、成员 B（建模）、成员 C（展示）</p>
+            <p>202X 年 X 月 X 日</p>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 2: 目录页 -->
+<div class="slide-container" id="slide2">
+    <div class="content-area">
+        <div class="two-column">
+            <!-- 左侧图片 -->
+            <div class="image-wrapper" style="border: none; background: transparent;">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/1865561775162711324" alt="Abstract Medical Data Visualization" style="border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+            </div>
+            <!-- 右侧目录 -->
+            <div>
+                <h2 style="font-size: 36px; margin-bottom: 30px; color: #003366;">目录 Overview</h2>
+                <ul class="toc-list">
+                    <li><span class="toc-number">1</span> 项目背景与目标</li>
+                    <li><span class="toc-number">2</span> 数据来源与预处理</li>
+                    <li><span class="toc-number">3</span> 探索性数据分析 (EDA)</li>
+                    <li><span class="toc-number">4</span> 统计建模与评估</li>
+                    <li><span class="toc-number">5</span> 关键发现与解读</li>
+                    <li><span class="toc-number">6</span> 原型系统展示</li>
+                    <li><span class="toc-number">7</span> 总结与展望</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 3: 项目背景与研究目标 -->
+<div class="slide-container" id="slide3">
+    <h2 class="slide-title">项目背景与研究目标</h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <!-- 左侧：痛点 -->
+            <div style="background-color: #fff5f5; border-color: #fed7d7;">
+                <h3 style="color: #c53030; border-bottom: 2px solid #c53030; padding-bottom: 10px;">
+                    <i class="fa-solid fa-notes-medical"></i> 背景痛点
+                </h3>
+                <div class="icon-box">
+                    <i class="fa-solid fa-weight-hanging"></i>
+                    <div>
+                        <strong>负担重</strong>
+                        <p>糖尿病患者频繁住院，医疗资源消耗巨大。</p>
+                    </div>
+                </div>
+                <div class="icon-box">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <div>
+                        <strong>难预测</strong>
+                        <p>管理者难以准确识别高危再入院人群。</p>
+                    </div>
+                </div>
+                <div class="icon-box">
+                    <i class="fa-solid fa-bed"></i>
+                    <div>
+                        <strong>资源紧</strong>
+                        <p>床位调度缺乏有效的数据支持。</p>
+                    </div>
+                </div>
+            </div>
+            <!-- 右侧：目标 -->
+            <div style="background-color: #ebf8ff; border-color: #bee3f8;">
+                <h3 style="color: #2b6cb0; border-bottom: 2px solid #2b6cb0; padding-bottom: 10px;">
+                    <i class="fa-solid fa-bullseye"></i> 两大核心目标
+                </h3>
+                <div style="margin-top: 30px;">
+                    <h4 style="color: #2c5282;">目标 1：分类任务 (Classification)</h4>
+                    <p>预测患者出院后 <strong>30 天内是否再入院</strong>（是/否）。</p>
+                    <hr style="border: 0; border-top: 1px dashed #bee3f8; margin: 20px 0;">
+                    <h4 style="color: #2c5282;">目标 2：回归任务 (Regression)</h4>
+                    <p>预测患者本次的 <strong>住院天数</strong> (Length of Stay)。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 4: 数据来源与预处理 -->
+<div class="slide-container" id="slide4">
+    <h2 class="slide-title">数据来源与预处理流程</h2>
+    <div class="content-area">
+        <!-- 流程图 -->
+        <div class="timeline-container">
+            <div class="timeline-step">
+                <i class="fa-solid fa-database"></i>
+                <h3>原始数据</h3>
+                <p>101,766 条<br>UCI 糖尿病数据集</p>
+            </div>
+            <div class="arrow-separator"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="timeline-step">
+                <i class="fa-solid fa-filter"></i>
+                <h3>分层抽样</h3>
+                <p>控制数据量 < 10MB<br>保留分布代表性</p>
+            </div>
+            <div class="arrow-separator"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="timeline-step">
+                <i class="fa-solid fa-broom"></i>
+                <h3>清洗筛选</h3>
+                <p>剔除死亡/临终记录<br>缺失值处理</p>
+            </div>
+            <div class="arrow-separator"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="timeline-step" style="background-color: #e6fffa; border-color: #b2f5ea;">
+                <i class="fa-solid fa-check-circle" style="color: #38a169;"></i>
+                <h3 style="color: #2f855a;">最终样本</h3>
+                <p style="font-weight: 700; color: #2f855a;">16,777 条</p>
+            </div>
+        </div>
+
+        <!-- 特征工程亮点 -->
+        <div style="background-color: #f7fafc; padding: 20px; border-radius: 8px; margin-top: 30px; border-left: 5px solid #005088;">
+            <h3 style="font-size: 22px; margin-bottom: 10px;">✨ 特征工程亮点</h3>
+            <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <li><strong>ICD-9 编码重组：</strong> 将数百种复杂诊断码归纳为 8 大类（循环系统、呼吸系统、糖尿病等）。</li>
+                <li><strong>类别变量压缩：</strong> 入院来源 (25→4 类)，出院去向 (30→5 类)，减少稀疏性。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 5: 数据概览 -->
+<div class="slide-container" id="slide5">
+    <h2 class="slide-title">EDA：再入院分布与住院天数</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <!-- 左侧：再入院 -->
+            <div style="text-align: center;">
+                <div class="image-wrapper" style="height: 350px; margin-bottom: 15px;">
+                    <img src="http://googleusercontent.com/image_collection/image_retrieval/8308736801457261114" alt="Readmission Pie Chart">
+                </div>
+                <div style="background: #fff5f5; padding: 10px; border-radius: 8px;">
+                    <p style="color: #c53030; font-weight: 700; margin-bottom: 0;">再入院率仅 11.16%</p>
+                    <p style="font-size: 16px; margin-top: 5px;">存在严重的类别不平衡问题</p>
+                </div>
+            </div>
+            <!-- 右侧：住院天数 -->
+            <div style="text-align: center;">
+                <div class="image-wrapper" style="height: 350px; margin-bottom: 15px;">
+                    <img src="http://googleusercontent.com/image_collection/image_retrieval/5996773505349615854" alt="Length of Stay Histogram">
+                </div>
+                <div style="background: #ebf8ff; padding: 10px; border-radius: 8px;">
+                    <p style="color: #2b6cb0; font-weight: 700; margin-bottom: 0;">右偏分布 (Right-skewed)</p>
+                    <p style="font-size: 16px; margin-top: 5px;">平均 4.4 天，中位数 4 天</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 6: 关键变量相关性 -->
+<div class="slide-container" id="slide6">
+    <h2 class="slide-title">关键变量相关性分析</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <!-- 左侧热力图 -->
+            <div class="image-wrapper">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/14835273909320286248" alt="Correlation Heatmap">
+            </div>
+            <!-- 右侧发现 -->
+            <div style="padding-left: 20px;">
+                <div style="margin-bottom: 30px;">
+                    <h3><i class="fa-solid fa-stethoscope"></i> 多病共存</h3>
+                    <p>平均诊断数 7-9 个。合并症数量与住院时间呈现显著正相关。</p>
+                </div>
+                <div style="margin-bottom: 30px;">
+                    <h3><i class="fa-solid fa-link"></i> 正相关链条</h3>
+                    <p>病情复杂 &rarr; 检查次数 (Lab Procedures) 增加 &rarr; 住院天数增加。</p>
+                </div>
+                <div>
+                    <h3><i class="fa-solid fa-user-clock"></i> 年龄因素</h3>
+                    <p>患者主要集中在 50-80 岁区间，高龄组的再入院风险略高。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 7: 建模策略 -->
+<div class="slide-container" id="slide7">
+    <h2 class="slide-title">建模策略与评估体系</h2>
+    <div class="content-area">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 20%;">任务类型</th>
+                    <th style="width: 25%;">模型选择</th>
+                    <th style="width: 30%;">关键策略</th>
+                    <th style="width: 25%;">评估指标</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>住院天数预测<br><span style="font-weight: 400; font-size: 16px; color: #666;">(回归任务)</span></td>
+                    <td><strong>多元线性回归</strong><br>(Linear Regression)</td>
+                    <td>采用<strong>逐步回归</strong> (Stepwise) 筛选变量，去除共线性特征。</td>
+                    <td>
+                        <div class="formula-container"><math display="inline"><msup><mi>R</mi><mn>2</mn></msup></math> (决定系数)</div>
+                        <div class="formula-container">MAE (平均绝对误差)</div>
+                        <div class="formula-container">RMSE (均方根误差)</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>再入院风险<br><span style="font-weight: 400; font-size: 16px; color: #666;">(分类任务)</span></td>
+                    <td><strong>Logistic 回归</strong><br>(Logistic Regression)</td>
+                    <td>引入<strong>类别权重</strong> (Class Weights) 以解决 1:9 的数据不平衡。</td>
+                    <td>
+                        <div class="formula-container">Recall (召回率)</div>
+                        <div class="formula-container">AUC (曲线下面积)</div>
+                        <div class="formula-container">OR (优势比)</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Slide 8: 模型一结果（住院天数） -->
+<div class="slide-container" id="slide8">
+    <h2 class="slide-title">模型结果 I：住院天数 (回归)</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <!-- 左侧指标 -->
+            <div style="display: flex; flex-direction: column; justify-content: center;">
+                <div style="margin-bottom: 40px; text-align: center;">
+                    <div class="highlight-number">0.2856</div>
+                    <div class="highlight-label"><math display="inline"><msup><mi>R</mi><mn>2</mn></msup></math> (提升 2.1%)</div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="highlight-number">1.86 <span style="font-size: 32px;">天</span></div>
+                    <div class="highlight-label">MAE (平均绝对误差)</div>
+                </div>
+                <div style="margin-top: 40px; background: #f0f7ff; padding: 20px; border-radius: 8px;">
+                    <p style="margin: 0;"><strong>结论：</strong> 虽然 $R^2$ 绝对值不高，但在社会科学/医疗数据中已属显著，能解释近 30% 的变异。</p>
+                </div>
+            </div>
+            <!-- 右侧系数图 -->
+            <div>
+                <h3 style="text-align: center; margin-bottom: 20px;">显著正相关因素 (Top 3)</h3>
+                <div class="image-wrapper">
+                    <img src="http://googleusercontent.com/image_collection/image_retrieval/656343109976524122" alt="Regression Coefficients">
+                </div>
+                <ul style="margin-top: 15px; font-size: 18px;">
+                    <li><strong>Number_Diagnoses:</strong> 诊断越多，住院越久 (系数最大)。</li>
+                    <li><strong>Lab_Procedures:</strong> 检查项目每增加 1 项，天数显著增加。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 9: 模型二结果（再入院） -->
+<div class="slide-container" id="slide9">
+    <h2 class="slide-title">模型结果 II：再入院风险 (分类)</h2>
+    <div class="content-area">
+        <div class="two-column">
+            <!-- 左侧 ROC 曲线 -->
+            <div class="image-wrapper">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/6288791935160221361" alt="ROC Curve">
+            </div>
+            <!-- 右侧指标与解读 -->
+            <div style="padding-left: 20px;">
+                <div style="background-color: #fffaf0; border-left: 5px solid #ed8936; padding: 20px; margin-bottom: 30px;">
+                    <h3 style="color: #c05621; margin-bottom: 10px;">核心策略：召回率优先</h3>
+                    <p style="font-size: 18px;">作为医疗预警模型，漏报高危患者的代价远高于误报。因此我们牺牲部分准确率，换取对潜在病人的覆盖。</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="text-align: center; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 48px; font-weight: 700; color: #cc3333;">67.7%</div>
+                        <div style="color: #666;">Recall (召回率)</div>
+                        <div style="font-size: 14px; color: #999;">成功识别 2/3 再入院者</div>
+                    </div>
+                    <div style="text-align: center; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="font-size: 48px; font-weight: 700; color: #005088;">0.64</div>
+                        <div style="color: #666;">AUC 值</div>
+                        <div style="font-size: 14px; color: #999;">具备一定区分能力</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 10: 风险因素深度解读 (OR值) -->
+<div class="slide-container" id="slide10">
+    <h2 class="slide-title">深度解读：谁是高危人群？(OR值分析)</h2>
+    <div class="content-area">
+        <p style="margin-bottom: 30px; text-align: center;">优势比 (Odds Ratio) > 1 表示风险增加</p>
+        <div class="bar-chart-container" style="max-width: 900px; margin: 0 auto;">
+            
+            <!-- Bar 1 -->
+            <div class="bar-row">
+                <div class="bar-label">既往住院次数</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: 100%; background: #c53030;">1.45</div>
+                </div>
+                <div style="margin-left: 15px; width: 250px; font-size: 16px; color: #666;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #c53030;"></i> 最大风险源 (+45%)
+                </div>
+            </div>
+
+            <!-- Bar 2 -->
+            <div class="bar-row">
+                <div class="bar-label">出院去向: 护理机构</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: 77%;">1.12</div>
+                </div>
+                 <div style="margin-left: 15px; width: 250px; font-size: 16px; color: #666;">
+                    身体状况尚未完全恢复
+                </div>
+            </div>
+
+            <!-- Bar 3 -->
+            <div class="bar-row">
+                <div class="bar-label">诊断数量 (合并症)</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: 76%;">1.11</div>
+                </div>
+                 <div style="margin-left: 15px; width: 250px; font-size: 16px; color: #666;">
+                    基础疾病越多越危险
+                </div>
+            </div>
+
+             <!-- Baseline Reference -->
+            <div class="bar-row" style="margin-top: -15px;">
+                <div class="bar-label"></div>
+                <div class="bar-track" style="background: transparent; border-top: 1px dashed #999; height: 1px; position: relative;">
+                   <div style="position: absolute; left: 69%; top: 5px; font-size: 14px; color: #999;">OR = 1.0 (基准线)</div>
+                </div>
+                <div style="margin-left: 15px; width: 250px;"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Slide 11: 原型系统展示 -->
+<div class="slide-container bleed-image-layout" id="slide11">
+    <div class="bleed-content">
+        <h2 class="slide-title">原型系统 (Prototype)</h2>
+        <div style="margin-top: 20px;">
+            <div style="margin-bottom: 25px;">
+                <h3 style="font-size: 24px;"><span style="color: #005088;">01.</span> 数据概览 (Dashboard)</h3>
+                <p style="font-size: 18px; color: #666;">可视化展示样本的年龄、性别及合并症分布。</p>
+            </div>
+            <div style="margin-bottom: 25px;">
+                <h3 style="font-size: 24px;"><span style="color: #005088;">02.</span> 模型评估 (Evaluation)</h3>
+                <p style="font-size: 18px; color: #666;">实时查看不同参数下的 ROC 曲线与混淆矩阵。</p>
+            </div>
+            <div>
+                <h3 style="font-size: 24px;"><span style="color: #cc3333;">03.</span> 交互预测 (Prediction)</h3>
+                <p style="font-size: 18px; color: #666;">输入患者特征（如既往住院次数），系统输出再入院概率预警。</p>
+            </div>
+        </div>
+    </div>
+    <div style="height: 100%; background-color: #f0f0f0;">
+        <img class="bleed-image" src="http://googleusercontent.com/image_collection/image_retrieval/15173174728858743576" alt="Shiny App Prototype on Laptop">
+    </div>
+</div>
+
+<!-- Slide 12: 总结与展望 -->
+<div class="slide-container" id="slide12">
+    <h2 class="slide-title">总结与改进方向</h2>
+    <div class="content-area">
+        <div class="two-column tiled">
+            <!-- 左侧：总结 -->
+            <div style="background-color: #f0fff4; border: 1px solid #c6f6d5;">
+                <h3 style="color: #276749; text-align: center; margin-bottom: 30px;">
+                    <i class="fa-solid fa-clipboard-check"></i> 项目总结
+                </h3>
+                <ul style="list-style: none;">
+                    <li><i class="fa-solid fa-check" style="color: #48bb78; margin-right: 10px;"></i> 完整复现了从清洗到建模的数据科学全流程。</li>
+                    <li><i class="fa-solid fa-check" style="color: #48bb78; margin-right: 10px;"></i> 确认 <strong>"既往住院史"</strong> 是核心风险驱动力。</li>
+                    <li><i class="fa-solid fa-check" style="color: #48bb78; margin-right: 10px;"></i> 实现了 <strong>"召回率优先"</strong> 的高敏度预警模型。</li>
+                </ul>
+            </div>
+            <!-- 右侧：展望 -->
+            <div style="background-color: #fffaf0; border: 1px solid #feebc8;">
+                <h3 style="color: #9c4221; text-align: center; margin-bottom: 30px;">
+                    <i class="fa-solid fa-rocket"></i> 局限与展望
+                </h3>
+                <ul style="list-style: none;">
+                    <li><i class="fa-solid fa-arrow-right" style="color: #ed8936; margin-right: 10px;"></i> <strong>数据维度：</strong> 引入生命体征（血压/血糖）以提升精度。</li>
+                    <li><i class="fa-solid fa-arrow-right" style="color: #ed8936; margin-right: 10px;"></i> <strong>模型优化：</strong> 尝试 XGBoost/LightGBM 捕捉非线性关系。</li>
+                    <li><i class="fa-solid fa-arrow-right" style="color: #ed8936; margin-right: 10px;"></i> <strong>临床应用：</strong> 增加针对高危患者的个性化干预建议。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slide 13: 致谢页 -->
+<div class="slide-container" id="slide13">
+    <div class="title-bg-overlay"></div>
+    <div class="content-area" style="text-align: center; z-index: 2; color: white;">
+        <h1 style="font-size: 80px; margin-bottom: 20px;">Thank You</h1>
+        <h2 style="color: #ddd; font-weight: 400; font-family: 'Noto Serif SC', serif;">感谢聆听与指导</h2>
+        <div style="margin-top: 60px; font-size: 24px; color: #ccc;" class="qa-text">
+            <p>欢迎老师和同学提问 (Q&A)</p>
+            <p style="margin-top: 20px; font-size: 18px;"><i class="fa-brands fa-github"></i> Project Repository: github.com/group3/diabetes-readmission</p>
+        </div>
+    </div>
+    <!-- 底部占位符说明 -->
+    <div class="placeholder-notice">
+        *注：本文档中使用的图表（如 ROC 曲线、直方图等）均为示例占位图，请在实际演示前替换为您的真实数据分析图表。
+    </div>
+</div>
+
+</body>
+</html>
+```
