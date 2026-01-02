@@ -41,6 +41,30 @@ encode_features <- function(X, encoders = NULL, fit = TRUE) {
   # 对分类变量进行编码
   X_encoded <- X
   
+  # 定义有序变量的正确顺序
+  ordered_levels <- list(
+    # 年龄组：按年龄从小到大排序
+    age = c("[0-10)", "[10-20)", "[20-30)", "[30-40)", 
+            "[40-50)", "[50-60)", "[60-70)", "[70-80)", 
+            "[80-90)", "[90-100)"),
+    
+    # 出院去向分组：按严重程度/风险从小到大排序
+    discharge_disposition_group = c("Home", "Transfer", "Other_Facility", 
+                                    "Other", "Death_Other", "Unknown"),
+    
+    # 入院来源分组：按紧急程度从小到大排序（计划性到紧急）
+    admission_source_group = c("Referral", "Transfer", "Emergency_Other", 
+                               "Other", "Unknown"),
+    
+    # 诊断分组：按疾病类别的一般严重程度排序（仅用于一致性，医学上没有严格顺序）
+    diag_1_group = c("Other", "Diabetes", "Respiratory", "Digestive", 
+                     "Genitourinary", "Circulatory", "Injury", "Neoplasms", "Unknown"),
+    diag_2_group = c("Other", "Diabetes", "Respiratory", "Digestive", 
+                     "Genitourinary", "Circulatory", "Injury", "Neoplasms", "Unknown"),
+    diag_3_group = c("Other", "Diabetes", "Respiratory", "Digestive", 
+                     "Genitourinary", "Circulatory", "Injury", "Neoplasms", "Unknown")
+  )
+  
   # 识别分类变量（字符型或因子型）
   categorical_cols <- names(X)[sapply(X, function(x) is.character(x) || is.factor(x))]
   
@@ -52,8 +76,35 @@ encode_features <- function(X, encoders = NULL, fit = TRUE) {
     if (fit) {
       # 训练时：创建编码器
       X_encoded[[col]] <- as.character(X[[col]])
-      levels <- unique(X_encoded[[col]])
-      X_encoded[[col]] <- as.numeric(factor(X_encoded[[col]], levels = levels))
+      
+      # 检查是否有预定义的顺序
+      if (col %in% names(ordered_levels)) {
+        # 使用预定义的顺序
+        predefined_levels <- ordered_levels[[col]]
+        # 只保留数据中实际存在的类别
+        available_levels <- intersect(predefined_levels, unique(X_encoded[[col]]))
+        # 如果数据中有预定义顺序中不存在的类别，添加到末尾
+        extra_levels <- setdiff(unique(X_encoded[[col]]), predefined_levels)
+        levels <- c(available_levels, sort(extra_levels))
+      } else if (grepl("_id$", col)) {
+        # ID变量：尝试按数值大小排序
+        unique_vals <- unique(X_encoded[[col]])
+        # 尝试转换为数值
+        numeric_vals <- suppressWarnings(as.numeric(unique_vals))
+        if (all(!is.na(numeric_vals))) {
+          # 如果都可以转换为数值，按数值大小排序
+          levels <- as.character(sort(numeric_vals))
+        } else {
+          # 如果不能全部转换，按字母顺序排序
+          levels <- sort(unique_vals)
+        }
+      } else {
+        # 其他分类变量：按字母顺序排序以保证一致性
+        levels <- sort(unique(X_encoded[[col]]))
+      }
+      
+      # 创建有序因子并转换为数值
+      X_encoded[[col]] <- as.numeric(factor(X_encoded[[col]], levels = levels, ordered = TRUE))
       encoders[[col]] <- list(levels = levels)
     } else {
       # 测试时：使用已有编码器
@@ -62,8 +113,8 @@ encode_features <- function(X, encoders = NULL, fit = TRUE) {
         # 处理未见过的类别
         X_encoded[[col]] <- ifelse(
           X_encoded[[col]] %in% encoders[[col]]$levels,
-          match(X_encoded[[col]], encoders[[col]]$levels) - 1,
-          0
+          match(X_encoded[[col]], encoders[[col]]$levels),
+          0  # 未知类别编码为0
         )
       }
     }

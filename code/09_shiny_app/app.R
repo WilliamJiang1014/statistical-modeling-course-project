@@ -922,15 +922,15 @@ server <- function(input, output, session) {
     reg_features <- reg_model$features_enhanced
     X_reg <- input_data[, reg_features, drop = FALSE]
     
-    # 编码特征
+    # 编码特征（与训练时保持一致，编码从1开始）
     encoders <- reg_model$encoders
     for (col in names(X_reg)) {
       if (col %in% names(encoders)) {
         X_reg[[col]] <- as.character(X_reg[[col]])
         X_reg[[col]] <- ifelse(
           X_reg[[col]] %in% encoders[[col]]$levels,
-          match(X_reg[[col]], encoders[[col]]$levels) - 1,
-          0
+          match(X_reg[[col]], encoders[[col]]$levels),  # 编码从1开始，与训练时一致
+          0  # 未知类别编码为0
         )
       }
     }
@@ -946,15 +946,15 @@ server <- function(input, output, session) {
     clf_features <- clf_model$features_enhanced
     X_clf <- input_data[, clf_features, drop = FALSE]
     
-    # 编码特征
+    # 编码特征（与训练时保持一致，编码从1开始）
     encoders_clf <- clf_model$encoders
     for (col in names(X_clf)) {
       if (col %in% names(encoders_clf)) {
         X_clf[[col]] <- as.character(X_clf[[col]])
         X_clf[[col]] <- ifelse(
           X_clf[[col]] %in% encoders_clf[[col]]$levels,
-          match(X_clf[[col]], encoders_clf[[col]]$levels) - 1,
-          0
+          match(X_clf[[col]], encoders_clf[[col]]$levels),  # 编码从1开始，与训练时一致
+          0  # 未知类别编码为0
         )
       }
     }
