@@ -282,19 +282,56 @@ cm_enhanced_matrix <- as.matrix(cm_test_enhanced$table)
 png('docs/figures/10_classification_confusion_matrix.png', width = 14, height = 5, units = "in", res = 300)
 par(mfrow = c(1, 2), family = "SimHei")
 
+# 辅助函数：绘制混淆矩阵
+plot_confusion_matrix <- function(cm_matrix, main_title) {
+  # 翻转矩阵以便正确显示（image()函数从下往上显示行）
+  cm_plot <- cm_matrix[nrow(cm_matrix):1, , drop = FALSE]
+  
+  # 获取矩阵维度
+  nr <- nrow(cm_plot)
+  nc <- ncol(cm_plot)
+  
+  # 绘制热力图
+  image(1:nc, 1:nr, t(cm_plot), 
+        col = heat.colors(20), 
+        main = main_title,
+        xlab = "预测值", ylab = "实际值",
+        xaxt = "n", yaxt = "n")
+  
+  # 添加坐标轴标签
+  axis(1, at = 1:nc, labels = colnames(cm_matrix))
+  axis(2, at = 1:nr, labels = rev(rownames(cm_matrix)), las = 1)
+  
+  # 计算每个格子的中心坐标并添加数字
+  # image()函数的坐标系统：x对应列，y对应行
+  for (i in 1:nr) {
+    for (j in 1:nc) {
+      value <- cm_plot[i, j]
+      # image()转置了矩阵，所以j对应x，i对应y
+      text(j, nr - i + 1, 
+           labels = format(value, big.mark = ","),
+           cex = 1.8, 
+           font = 2,
+           col = "black")
+    }
+  }
+  
+  # 添加网格线
+  abline(h = 0.5:(nr + 0.5), v = 0.5:(nc + 0.5), 
+         col = "gray50", lty = 2, lwd = 1)
+}
+
+# 确保矩阵有正确的行列名
+rownames(cm_base_matrix) <- c("未再入院", "再入院")
+colnames(cm_base_matrix) <- c("未再入院", "再入院")
+rownames(cm_enhanced_matrix) <- c("未再入院", "再入院")
+colnames(cm_enhanced_matrix) <- c("未再入院", "再入院")
+
 # 基准模型混淆矩阵
-image(cm_base_matrix, col = heat.colors(10), 
-      main = "基准模型 - 混淆矩阵", 
-      xlab = "预测值", ylab = "实际值")
-text(expand.grid(1:ncol(cm_base_matrix), 1:nrow(cm_base_matrix)), 
-     labels = as.character(cm_base_matrix))
+plot_confusion_matrix(cm_base_matrix, "基准模型 - 混淆矩阵")
 
 # 改进模型混淆矩阵
-image(cm_enhanced_matrix, col = heat.colors(10), 
-      main = "改进模型 - 混淆矩阵", 
-      xlab = "预测值", ylab = "实际值")
-text(expand.grid(1:ncol(cm_enhanced_matrix), 1:nrow(cm_enhanced_matrix)), 
-     labels = as.character(cm_enhanced_matrix))
+plot_confusion_matrix(cm_enhanced_matrix, "改进模型 - 混淆矩阵")
 
 dev.off()
 cat("✓ 已保存: docs/figures/10_classification_confusion_matrix.png\n")
